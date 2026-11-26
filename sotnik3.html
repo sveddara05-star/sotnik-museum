@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Музей клуба «Сотник» — Карта залов</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: #f4efe6;
+    color: #2a2018;
+    line-height: 1.7;
+  }
+
+  .museum-header {
+    background: #2a2018;
+    color: #f0e6d2;
+    padding: 32px 20px 24px;
+    text-align: center;
+    border-bottom: 6px double #b8860b;
+  }
+  .museum-header .crest { font-size: 44px; display: block; margin-bottom: 8px; }
+  .museum-header h1 {
+    font-size: clamp(20px, 5vw, 34px);
+    letter-spacing: 3px; color: #d4af37;
+    font-weight: normal; text-transform: uppercase;
+  }
+  .museum-header .subtitle {
+    font-style: italic; color: #c8b890;
+    margin-top: 8px; font-size: clamp(12px, 3vw, 15px);
+  }
+
+  .map-wrap {
+    max-width: 1000px; margin: 0 auto; padding: 30px 20px 10px;
+  }
+  .map-title {
+    text-align: center; font-size: 13px; letter-spacing: 3px;
+    color: #8a7550; text-transform: uppercase; margin-bottom: 20px;
+  }
+  .map {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .room {
+    background: #fffaf0;
+    border: 2px solid #d8c8a8;
+    border-radius: 8px;
+    padding: 20px 12px 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: .25s;
+    position: relative;
+    min-height: 110px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px #0001;
+  }
+  .room:hover {
+    border-color: #b8860b; transform: translateY(-4px);
+    box-shadow: 0 8px 20px #0002;
+  }
+  .room.active {
+    background: #2a2018; border-color: #b8860b;
+    box-shadow: 0 0 0 3px #b8860b55, 0 8px 20px #0003;
+  }
+  .room.active .room-num,
+  .room.active .room-name { color: #ffd700; }
+  .room-num {
+    position: absolute; top: 8px; left: 10px;
+    font-size: 12px; color: #b8860b; letter-spacing: 1px;
+    font-family: sans-serif; font-weight: bold;
+  }
+  .room-ico { font-size: 30px; margin-bottom: 6px; opacity: .9; }
+  .room-name {
+    font-size: 12.5px; color: #5a3a10; letter-spacing: .5px;
+    line-height: 1.3;
+  }
+  .room.wide { grid-column: span 2; }
+
+  .divider {
+    max-width: 1000px; margin: 10px auto 0; padding: 0 20px;
+    display: flex; align-items: center; gap: 12px;
+    color: #b8860b; font-size: 12px; letter-spacing: 2px;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: #d8c8a8;
+  }
+
+  .main {
+    max-width: 1000px; margin: 0 auto; padding: 30px 24px 80px;
+  }
+  .room-panel { display: none; animation: fade .4s; }
+  .room-panel.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(12px);} to {opacity:1;transform:none;} }
+
+  .panel-header {
+    border-left: 5px solid #b8860b;
+    padding: 4px 0 4px 18px;
+    margin-bottom: 24px;
+  }
+  .panel-header .room-tag {
+    font-size: 12px; letter-spacing: 2px; color: #8a7550;
+    text-transform: uppercase;
+  }
+  .panel-header h2 {
+    font-size: clamp(20px, 4vw, 28px);
+    color: #5a3a10; letter-spacing: 1px; margin-top: 4px;
+  }
+
+  .exhibit-card {
+    background: #fffaf0; border: 1px solid #d8c8a8;
+    border-radius: 4px; padding: 24px; margin-bottom: 20px;
+    box-shadow: 0 2px 8px #0001; position: relative;
+  }
+  .exhibit-card::before {
+    content: "ЭКСПОНАТ"; position: absolute; top: -10px; left: 20px;
+    background: #b8860b; color: #fff; font-size: 10px;
+    letter-spacing: 2px; padding: 3px 10px; border-radius: 2px;
+    font-family: sans-serif;
+  }
+  .exhibit-card h3 { color: #5a3a10; font-size: 18px; margin: 6px 0 10px; }
+  .exhibit-card p { margin-bottom: 10px; color: #3a2e1c; }
+  .exhibit-card p:last-child { margin-bottom: 0; }
+  .exhibit-card ul { margin: 10px 0 10px 22px; }
+  .exhibit-card li { margin-bottom: 6px; color: #3a2e1c; }
+
+  .exhibit-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 18px; margin-bottom: 24px;
+  }
+  .exhibit-mini {
+    background: #fffaf0; border: 1px solid #d8c8a8;
+    padding: 20px; border-radius: 4px; transition: .2s;
+  }
+  .exhibit-mini:hover { box-shadow: 0 4px 16px #0002; transform: translateY(-2px); }
+  .exhibit-mini .icon { font-size: 34px; display: block; margin-bottom: 10px; }
+  .exhibit-mini h4 { color: #5a3a10; margin-bottom: 6px; font-size: 15px; }
+  .exhibit-mini p { font-size: 13.5px; color: #5a4a2a; }
+
+  .timeline { position: relative; padding-left: 30px; margin-top: 10px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
+    width: 2px; background: #b8860b;
+  }
+  .tl-item {
+    position: relative; margin-bottom: 22px; padding: 14px 18px;
+    background: #fffaf0; border: 1px solid #d8c8a8; border-radius: 4px;
+    box-shadow: 0 2px 6px #0001;
+  }
+  .tl-item::before {
+    content: ''; position: absolute; left: -30px; top: 20px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #b8860b; border: 3px solid #f4efe6;
+  }
+  .tl-date {
+    display: inline-block; background: #2a2018; color: #ffd700;
+    padding: 3px 12px; border-radius: 3px; font-size: 12.5px;
+    letter-spacing: 1px; margin-bottom: 6px; font-family: sans-serif;
+  }
+  .tl-item h4 { color: #5a3a10; margin-bottom: 6px; font-size: 15px; }
+  .tl-item p { font-size: 14px; color: #4a3a24; }
+
+  .person-card {
+    background: #fffaf0; border: 1px solid #d8c8a8;
+    padding: 20px; margin-bottom: 16px; border-radius: 4px;
+    display: flex; gap: 16px; align-items: start;
+  }
+  .person-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: #2a2018; color: #ffd700;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .person-card h4 { color: #5a3a10; margin-bottom: 4px; font-size: 16px; }
+  .person-card .role { font-size: 13px; color: #8a6508; font-style: italic; margin-bottom: 6px; }
+  .person-card p { font-size: 14px; color: #4a3a24; }
+
+  .doc-list { list-style: none; }
+  .doc-list li {
+    background: #fffaf0; border: 1px solid #d8c8a8;
+    padding: 16px 20px; margin-bottom: 12px; border-radius: 4px;
+    display: flex; gap: 14px; align-items: start;
+  }
+  .doc-list .doc-icon { font-size: 24px; flex-shrink: 0; }
+  .doc-list h4 { color: #5a3a10; font-size: 15px; margin-bottom: 4px; }
+  .doc-list p { font-size: 13.5px; color: #5a4a2a; }
+  .doc-list .source { font-size: 12.5px; color: #8a7550; font-style: italic; margin-top: 4px; }
+
+  .footer {
+    background: #2a2018; color: #a89878;
+    padding: 28px 20px; text-align: center;
+    font-size: 13px; border-top: 4px double #b8860b;
+  }
+  .footer p { margin-bottom: 6px; }
+
+  .to-top {
+    position: fixed; bottom: 20px; right: 20px;
+    background: #b8860b; color: #fff; border: none;
+    width: 44px; height: 44px; border-radius: 50%;
+    font-size: 20px; cursor: pointer; box-shadow: 0 4px 12px #0004;
+    display: none; z-index: 200;
+  }
+  .to-top.show { display: block; }
+
+  @media (max-width: 720px) {
+    .map { grid-template-columns: repeat(2, 1fr); }
+    .room.wide { grid-column: span 2; }
+    .main { padding: 24px 16px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="museum-header">
+  <span class="crest">⚔️</span>
+  <h1>Музей клуба «Сотник»</h1>
+  <div class="subtitle">Хуторское казачье общество «Хутор Артёмовский» · г. Артёмовский</div>
+</header>
+
+<div class="map-wrap">
+  <div class="map-title">План экспозиции · выберите зал</div>
+  <div class="map" id="map"></div>
+</div>
+
+<div class="divider">ЭКСПОЗИЦИЯ ЗАЛА</div>
+
+<main class="main" id="main"></main>
+
+<footer class="footer">
+  <p><b>Цифровой музей клуба «Сотник»</b></p>
+  <p>Экспозиция составлена по открытым публикациям СМИ и материалам казачьих обществ (2023–2025 гг.)</p>
+  <p style="margin-top:10px; font-size:12px;">г. Артёмовский, Свердловская область</p>
+</footer>
+
+<button class="to-top" id="toTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+const ROOMS = [
+  {
+    id: 'about', num: '01', icon: '🏛', name: 'О музее', wide: true,
+    render: () => `
+      <div class="exhibit-card">
+        <h3>Вводная статья</h3>
+        <p><b>Спортивно-патриотический клуб «Сотник»</b> — молодёжное объединение, действующее при хуторском казачьем обществе «Хутор Артёмовский» (Среднеуральский отдел Оренбургского казачьего войска). Клуб ведёт работу по патриотическому воспитанию, спортивной и прикладной подготовке, а также сохранению казачьих традиций.</p>
+        <p>Экспозиция музея выходит за рамки одного клуба: она рассказывает о казачьей культуре, быте, системе чинов и истории Оренбургского казачьего войска — той среды, в которой живёт и развивается «Сотник».</p>
+      </div>
+      <div class="exhibit-grid">
+        <div class="exhibit-mini"><span class="icon">⚔️</span><h4>Фланкировка</h4><p>Виртуозное владение шашкой, часто двумя одновременно — главный символ мастерства воспитанников.</p></div>
+        <div class="exhibit-mini"><span class="icon">🙏</span><h4>Присяга</h4><p>Принятие присяги кадетами перед атаманом и духовником хутора.</p></div>
+        <div class="exhibit-mini"><span class="icon">🎯</span><h4>Подготовка</h4><p>Стрельба, метание ножа, казачьи забавы, школа выживания в походах.</p></div>
+        <div class="exhibit-mini"><span class="icon">📜</span><h4>Традиции</h4><p>Изучение казачьей культуры, православной веры и уклада жизни.</p></div>
+      </div>
+    `
+  },
+  {
+    id: 'history', num: '02', icon: '📖', name: 'История и миссия',
+    render: () => `
+      <div class="exhibit-card">
+        <h3>Основание и принадлежность</h3>
+        <p>Клуб «Сотник» — молодёжное крыло НКО «Хуторское казачье общество „Хутор Артёмовский“» (Среднеуральский отдел Оренбургского казачьего войска).</p>
+        <p>Атаманом хутора является <b>Григорий Валерьевич Пономарёв</b>.</p>
+      </div>
+      <div class="exhibit-card">
+        <h3>Цели и задачи</h3>
+        <p>1. <b>Патриотическое воспитание</b> — подготовка молодёжи к служению Отечеству.<br>
+           2. <b>Спортивная подготовка</b> — единоборства, прикладные виды спорта, походы.<br>
+           3. <b>Сохранение традиций</b> — казачья культура, вера, уклад.</p>
+        <p><i>«Работа с молодёжью для нас — основное направление. Дети стараются, принимают участие во всех мероприятиях Артёмовского городского округа, выезжают на областные состязания»</i>, — говорит атаман Григорий Пономарёв.</p>
+      </div>
+      <div class="exhibit-card">
+        <h3>Статус в казачьем движении</h3>
+        <p>В 2024 году воспитанники влились в молодёжное казачье движение <b>«Казачий дозор»</b>. Несмотря на «первые шаги», они уже хорошо зарекомендовали себя на выездных фестивалях.</p>
+      </div>
+    `
+  },
+  {
+    id: 'cadets', num: '03', icon: '🎖', name: 'Воспитанники',
+    render: () => `
+      <div class="exhibit-card">
+        <h3>Присяга и посвящение</h3>
+        <p>Воспитанники вступают в кадетское братство, читая присягу: <i>«прилежно учиться и готовиться к служению казачеству, отечеству и вере православной»</i>. После благословения духовника старейшины вручают погоны.</p>
+      </div>
+      <div class="exhibit-card">
+        <h3>Фланкировка</h3>
+        <p>Главный визуальный символ мастерства — владение шашкой (часто двумя). Выступления кадетов открывают Круги казачьего общества и городские мероприятия.</p>
+      </div>
+      <div class="exhibit-card">
+        <h3>Прикладные навыки и выезды</h3>
+        <p>Стрельба из пневматической винтовки, метание ножа, казачьи забавы, школа выживания в походах.</p>
+        <p>В январе 2025 года кадеты приняли участие в региональных «Рождественских сборах» в Екатеринбургском кадетском корпусе: парашютная подготовка, полоса препятствий, историческая реконструкция Ростовской наступательной операции 1943 года, посещение музея боевой славы Урала.</p>
+      </div>
+    `
+  },
+  {
+    id: 'culture', num: '04', icon: '🏘', name: 'Казачья культура', wide: true,
+    render: () => `
+      <div class="exhibit-card">
+        <h3>Устои и традиции</h3>
+        <p>Казачья культура — самобытная система ценностей, передаваемая из поколения в поколение. Ключевые устои:</p>
+        <ul>
+          <li><b>Уважение к старшим</b> — младшие не садились без разрешения старших.</li>
+          <li><b>Почитание гостя</b> — первые три дня гостя не расспрашивали о делах.</li>
+          <li><b>Уважение к женщине</b> — по её поведению судили о достоинстве мужчины.</li>
+          <li><b>Культ боевого коня</b> — перед войной жена кланялась коню, чтобы он уберёг мужа.</li>
+          <li><b>Культ подарков</b> — казак не возвращался домой без гостинцев.</li>
+        </ul>
+      </div>
+      <div class="exhibit-card">
+        <h3>Воспитание воина</h3>
+        <p>Мальчиков с 3 лет обучали верховой езде, с 7 — военным играм, с 14 — караульной службе. С 18 лет казак нёс действительную службу до 45 лет.</p>
+        <p>При рождении мальчика гости приносили «на зубок» стрелы и патроны, а при крещении его «посвящали в казаки»: надевали саблю и сажали на коня.</p>
+      </div>
+      <div class="exhibit-card">
+        <h3>Кухня</h3>
+        <p>Основу рациона составляли супы (уха, борщ, лапша), каши (кулеш, саламата), мясные блюда (гуляш, голубцы, холодец), десерты (нардек, кулага, донские пряники).</p>
+        <p>У оренбургских казаков были распространены окрошка и тёртая редька с квасом. Напитки: квас, компот (узвар), чай (со второй половины XIX века).</p>
+      </div>
+      <div class="exhibit-card">
+        <h3>Праздники и обряды</h3>
+        <p>Зимний цикл: рождественские колядования, святочные гадания, масленичные гуляния. Весенне-летний: пасхальные торжества, троицкие обряды. Свадебный обряд длился 7–10 дней.</p>
+        <p>Праздники сопровождались состязаниями в стрельбе, рубке, джигитовке, «гулебными» военными играми.</p>
+      </div>
+    `
+  },
+  {
+    id: 'ranks', num: '05', icon: '🎖', name: 'Чины и звания',
+    render: () => `
+      <div class="exhibit-card">
+        <h3>Казачьи чины</h3>
+        <p>Система чинов в казачьих войсках отличалась от армейской. Вот основные:</p>
+        <ul>
+          <li><b>Сотник</b> — обер-офицерский чин. Именно это звание дало название клубу «Сотник».</li>
+          <li><b>Урядник</b> — унтер-офицерский чин, помощник командира.</li>
+          <li><b>Вахмистр</b> — старший унтер-офицер в казачьей сотне.</li>
+          <li><b>Подъесаул</b> — обер-офицерский чин, помощник есаула.</li>
+          <li><b>Есаул</b> — офицерский чин, командир казачьей сотни. Соответствовал капитану в пехоте.</li>
+          <li><b>Войсковой старшина</b> — старший офицерский чин, соответствовал подполковнику.</li>
+          <li><b>Атаман</b> — выборный глава казачьего общества.</li>
+        </ul>
+      </div>
+      <div class="exhibit-card">
+        <h3>Современная практика</h3>
+        <p>Чины присваиваются приказами атаманов. Например, в феврале 2025 года казакам Оренбургского войскового казачьего общества были присвоены чины «подъесаул» и «вахмистр».</p>
+      </div>
+    `
+  },
+  {
+    id: 'ovko', num: '06', icon: '🗡', name: 'Оренбургское войско', wide: true,
+    render: () => `
+      <div class="exhibit-card">
+        <h3>История войска</h3>
+        <p>Оренбургское казачье войско было создано правительством в XVIII веке и не знало традиционных институтов казачьей вольницы. Однако к середине XIX века у оренбургских казаков сформировалось собственное казачье самосознание.</p>
+        <p>В 1748 году указом Военной коллегии был назначен первый войсковой атаман — сотник Василий Могутов. Штат войска утверждён в 1755 году.</p>
+      </div>
+      <div class="exhibit-card">
+        <h3>Структура сегодня</h3>
+        <p>Оренбургское войсковое казачье общество (ОВКО) включает несколько отделов. «Хутор Артёмовский» входит в <b>Среднеуральский отдел</b>, которым руководит казачий полковник Александр Викторович Филипов.</p>
+        <p>В декабре 2025 года Среднеуральский отдел и Пятый отдел «Исетская линия» заключили соглашения с Свердловским облвоенкоматом: казаки официально вошли в мобилизационный людской резерв РФ.</p>
+      </div>
+      <div class="exhibit-card">
+        <h3>Служение и современность</h3>
+        <p>Казаки Среднеуральского отдела участвуют в общественной работе, взаимодействуют с муниципалитетами и органами внутренних дел, собирают гуманитарную помощь.</p>
+        <p>С 2011 года проводятся традиционные полевые казачьи сборы, в которых участвуют более 500 человек из городов Свердловской области.</p>
+      </div>
+    `
+  },
+  {
+    id: 'chronicle', num: '07', icon: '📅', name: 'Хронология клуба', wide: true,
+    render: () => `
+      <div class="timeline">
+        <div class="tl-item"><span class="tl-date">Ноябрь 2023</span><h4>«Мужское братство» в Буланаше</h4><p>Участие в патриотическом мероприятии на территории храма Серафима Саровского: стрельба, метание ножа, казачьи забавы.</p></div>
+        <div class="tl-item"><span class="tl-date">Июль 2024</span><h4>Круг «Хутора Артёмовский»</h4><p>Выступление с фланкировкой перед началом Круга во Дворце культуры им. А.С. Попова.</p></div>
+        <div class="tl-item"><span class="tl-date">Август 2024</span><h4>Смена «Атаманский резерв – 2024»</h4><p>Участие в профильной казачьей смене.</p></div>
+        <div class="tl-item"><span class="tl-date">Октябрь 2024</span><h4>Культурный центр им. Г.А. Речкалова</h4><p>Посещение центра в посёлке Зайково.</p></div>
+        <div class="tl-item"><span class="tl-date">Декабрь 2024</span><h4>Фестиваль «Мужское братство» в Полдневой</h4><p>Представление Артёмовского на фестивале казачьей культуры. Более 70 участников из разных городов.</p></div>
+        <div class="tl-item"><span class="tl-date">Январь 2025</span><h4>«Рождественские сборы»</h4><p>Участие в региональных сборах в Екатеринбургском кадетском корпусе: парашютная подготовка, полоса препятствий, реконструкция.</p></div>
+        <div class="tl-item"><span class="tl-date">Февраль 2025</span><h4>День защитника Отечества</h4><p>Воспитанники выступали в роли инструкторов и судей на патриотических мероприятиях.</p></div>
+        <div class="tl-item"><span class="tl-date">Июль 2025</span><h4>Пополнение рядов</h4><p>Трое воспитанников дали клятву верности казачеству.</p></div>
+      </div>
+    `
+  },
+  {
+    id: 'mentors', num: '08', icon: '👤', name: 'Наставники',
+    render: () => `
+      <div class="person-card"><div class="person-avatar">ГП</div><div><h4>Пономарёв Григорий Валерьевич</h4><div class="role">Атаман Хутора Артёмовский</div><p>Представляет клуб на уровне региона, взаимодействует с администрацией и епархией. Инициатор работы с молодёжью.</p></div></div>
+      <div class="person-card"><div class="person-avatar">☦</div><div><h4>Духовник Хутора</h4><div class="role">Духовное окормление</div><p>Благословляет кадетов перед присягой. Мероприятия проходят при храмах.</p></div></div>
+      <div class="person-card"><div class="person-avatar">⚔</div><div><h4>Старейшины хутора</h4><div class="role">Наставничество</div><p>Вручают погоны кадетам. Передают традиции и опыт.</p></div></div>
+      <div class="person-card"><div class="person-avatar">🎖</div><div><h4>Филипов Александр Викторович</h4><div class="role">Атаман Среднеуральского отдела</div><p>Казачий полковник, председательствует на атаманских правлениях отдела.</p></div></div>
+    `
+  },
+  {
+    id: 'reference', num: '09', icon: '📚', name: 'Справочник', wide: true,
+    render: () => `
+      <div class="exhibit-grid">
+        <div class="exhibit-mini"><span class="icon">⚔️</span><h4>Фланкировка</h4><p>Казачье боевое искусство владения шашкой, часто двумя одновременно.</p></div>
+        <div class="exhibit-mini"><span class="icon">👑</span><h4>Атаман</h4><p>Выборный глава казачьего общества. В «Хуторе Артёмовский» — Г.В. Пономарёв.</p></div>
+        <div class="exhibit-mini"><span class="icon">⭕</span><h4>Круг</h4><p>Общее собрание казаков, решающее важнейшие вопросы жизни общины.</p></div>
+        <div class="exhibit-mini"><span class="icon">🏘</span><h4>ХКО</h4><p>Хуторское казачье общество — первичная единица. «Хутор Артёмовский» входит в Среднеуральский отдел ОКВ.</p></div>
+        <div class="exhibit-mini"><span class="icon">🗡</span><h4>ОКВ</h4><p>Оренбургское казачье войско — одно из исторических казачьих войск России.</p></div>
+        <div class="exhibit-mini"><span class="icon">🛡</span><h4>«Казачий дозор»</h4><p>Молодёжное казачье движение, в которое влились воспитанники в 2024 году.</p></div>
+        <div class="exhibit-mini"><span class="icon">🎖</span><h4>Сотник</h4><p>Обер-офицерский чин. Дал название клубу.</p></div>
+        <div class="exhibit-mini"><span class="icon">📯</span><h4>Есаул</h4><p>Офицерский чин, командир казачьей сотни. Соответствовал капитану.</p></div>
+        <div class="exhibit-mini"><span class="icon">🏛</span><h4>Среднеуральский отдел</h4><p>Структурное подразделение ОКВ, объединяющее станицы и хутора Свердловской области.</p></div>
+      </div>
+    `
+  }
+];
+
+let currentRoom = 'about';
+const $ = id => document.getElementById(id);
+
+function renderMap() {
+  const map = $('map');
+  map.innerHTML = '';
+  ROOMS.forEach(room => {
+    const div = document.createElement('div');
+    div.className = 'room' + (room.wide ? ' wide' : '') + (room.id === currentRoom ? ' active' : '');
+    div.innerHTML = `
+      <span class="room-num">${room.num}</span>
+      <span class="room-ico">${room.icon}</span>
+      <span class="room-name">${room.name}</span>
+    `;
+    div.onclick = () => goTo(room.id);
+    map.appendChild(div);
+  });
+}
+
+function renderPanels() {
+  const main = $('main');
+  main.innerHTML = '';
+  ROOMS.forEach(room => {
+    const panel = document.createElement('div');
+    panel.className = 'room-panel' + (room.id === currentRoom ? ' active' : '');
+    panel.id = 'room-' + room.id;
+    panel.innerHTML = `
+      <div class="panel-header">
+        <div class="room-tag">Зал ${room.num} · ${room.icon}</div>
+        <h2>${room.name}</h2>
+      </div>
+      ${room.render()}
+    `;
+    main.appendChild(panel);
+  });
+}
+
+function goTo(id) {
+  currentRoom = id;
+  renderMap();
+  document.querySelectorAll('.room-panel').forEach(p => p.classList.remove('active'));
+  const target = $('room-' + id);
+  if (target) target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+window.addEventListener('scroll', () => {
+  $('toTop').classList.toggle('show', window.scrollY > 400);
+});
+
+renderMap();
+renderPanels();
+</script>
+</body>
+</html>
